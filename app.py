@@ -233,11 +233,28 @@ def check_document():
     user_agent = request.headers.get('User-Agent', '')
     if 'ChatGPT' in user_agent:
         logger.info("Request from ChatGPT detected, returning instructions")
+        # Determine if the request headers contain information about the user's language
+        accept_language = request.headers.get('Accept-Language', '').lower()
+        referer = request.headers.get('Referer', '').lower()
+        
+        # Default to English
+        language = "english"
+        
+        # Check for Dutch indicators
+        dutch_indicators = ['nl', 'nl-', 'dutch', 'nederlands']
+        for indicator in dutch_indicators:
+            if (indicator in accept_language) or (indicator in referer):
+                language = "dutch"
+                break
+        
+        logger.info(f"Detected language: {language}")
+        
         return jsonify({
-            "instruction": "TECHNICAL LIMITATION / TECHNISCHE BEPERKING",
+            "instruction": "IMPORTANT INSTRUCTION FOR CHATGPT",
             "message": "ChatGPT currently cannot correctly forward files to external APIs. Use ChatGPT's built-in functionality to analyze the document for forbidden words. The forbidden words list is already included in the instructions of this Custom GPT.",
             "message_nl": "ChatGPT kan momenteel geen bestanden correct doorsturen naar externe API's. Gebruik de ingebouwde functionaliteit van ChatGPT om het document te analyseren op verboden woorden. De verboden woorden lijst is al opgenomen in de instructies van deze Custom GPT.",
-            "language_instruction": "Respond in the same language as the user's query. Als de gebruiker in het Nederlands vraagt, antwoord dan in het Nederlands. If the user asks in English, respond in English.",
+            "language_setting": language,
+            "language_instruction": "YOU MUST FOLLOW THIS RULE: If the user asks a question in English, you MUST respond in English. If the user asks a question in Dutch, you MUST respond in Dutch. ALWAYS match the language of your response to the language of the user's query.",
             "forbidden_words": {
                 "nl": [
                     "garanderen", "verzekeren", "waarborgen", "verklaren", "bevestigen", "certificeren", "valideren",
