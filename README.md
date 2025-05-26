@@ -1,6 +1,6 @@
 # Forbidden Words Checker
 
-Een Node.js/Express webservice die documenten controleert op verboden woorden.
+Een Python/Flask webservice die documenten controleert op verboden woorden.
 
 ## Functionaliteit
 
@@ -13,14 +13,14 @@ Deze service biedt:
 
 ```bash
 # Installeer dependencies
-npm install
+pip install -r requirements.txt
 ```
 
 ## Gebruik
 
 ```bash
 # Start de server
-npm start
+python app.py
 ```
 
 De server draait standaard op poort 3000. Je kunt een andere poort configureren door een PORT environment variable in te stellen.

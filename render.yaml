@@ -1,12 +1,10 @@
 services:
   - type: web
     name: forbidden-words-checker
-    env: node
-    buildCommand: npm install
-    startCommand: npm start
+    env: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 10000
     autoDeploy: true
