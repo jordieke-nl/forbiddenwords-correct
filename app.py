@@ -214,39 +214,14 @@ def scan_for_forbidden_words(text_content):
     
     return results
 
-def generate_mock_data():
-    """Generate mock data for testing"""
-    return [
-        {
-            "word": "guarantee",
-            "page": 1,
-            "context": "We can guarantee that the system is secure against common attacks.",
-            "title": "Assurance-woorden (1)",
-            "reason": "Deze woorden impliceren een hoog niveau van zekerheid dat niet past bij een pentest.",
-            "recommendation": "Gebruik neutralere termen zoals 'observeren', 'constateren', 'identificeren' of 'vaststellen'."
-        },
-        {
-            "word": "audit",
-            "page": 2,
-            "context": "We performed an audit of all security controls in the application.",
-            "title": "Technische termen (3)",
-            "reason": "Deze termen hebben specifieke technische betekenissen in assurance-contexten die verwarring kunnen veroorzaken.",
-            "recommendation": "Gebruik specifiekere termen zoals 'pentest', 'security assessment', 'vulnerability scan', etc."
-        },
-        {
-            "word": "we conclude",
-            "page": 3,
-            "context": "Based on our testing, we conclude that the application meets security standards.",
-            "title": "Conclusies (2)",
-            "reason": "Deze formuleringen suggereren een definitieve conclusie of oordeel dat buiten de scope van een pentest valt.",
-            "recommendation": "Gebruik feitelijke beschrijvingen van wat is geobserveerd, zonder een definitief oordeel te vellen."
-        }
-    ]
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({"status": "OK"})
+
+
 
 @app.route('/check', methods=['POST'])
 def check_document():
@@ -254,20 +229,76 @@ def check_document():
     logger.info("Received request to /check endpoint")
     logger.info(f"Request headers: {dict(request.headers)}")
     
-    # Log request information
+    # Special handling for ChatGPT
+    user_agent = request.headers.get('User-Agent', '')
+    if 'ChatGPT' in user_agent:
+        logger.info("Request from ChatGPT detected, returning instructions")
+        return jsonify({
+            "instruction": "TECHNISCHE BEPERKING",
+            "message": "ChatGPT kan momenteel geen bestanden correct doorsturen naar externe API's. Gebruik de ingebouwde functionaliteit van ChatGPT om het document te analyseren op verboden woorden. De verboden woorden lijst is al opgenomen in de instructies van deze Custom GPT.",
+            "forbidden_words": {
+                "nl": [
+                    "garanderen", "verzekeren", "waarborgen", "verklaren", "bevestigen", "certificeren", "valideren",
+                    "wij concluderen", "wij zijn van oordeel dat", "wij vinden dat", "wij hebben vastgesteld dat", "wij geloven", "u heeft… nageleefd",
+                    "ons is niets gebleken op grond waarvan wij zouden moeten concluderen dat…", "niets dat wij hebben gereviewd geeft een indicatie dat…", "gebaseerd op onze werkzaamheden hebben wij geen reden om aan te nemen dat…",
+                    "controle", "beoordeling", "samenstellen",
+                    "altijd", "nooit", "alle", "geen", "complete", "geheel"
+                ],
+                "en": [
+                    "guarantee", "insure", "assure", "ensure", "warrant", "attest", "verify", "certify", "validate",
+                    "we conclude", "we are of the opinion", "in our opinion", "we find", "we found", "we have determined", "we believe", "you comply with…",
+                    "nothing has come to our attention that causes us to believe…", "nothing we reviewed indicated…", "based on the procedures we performed, we have no reason to believe that…",
+                    "audit", "review", "compile",
+                    "always", "never", "all", "none", "complete", "entire"
+                ]
+            },
+            "categories": {
+                "assurance-woorden": {
+                    "title": "Assurance-woorden",
+                    "number": "1",
+                    "reason": "Deze woorden impliceren een hoog niveau van zekerheid dat niet past bij een pentest.",
+                    "recommendation": "Gebruik neutralere termen zoals 'observeren', 'constateren', 'identificeren' of 'vaststellen'."
+                },
+                "conclusies": {
+                    "title": "Conclusies",
+                    "number": "2",
+                    "reason": "Deze formuleringen suggereren een definitieve conclusie of oordeel dat buiten de scope van een pentest valt.",
+                    "recommendation": "Gebruik feitelijke beschrijvingen van wat is geobserveerd, zonder een definitief oordeel te vellen."
+                },
+                "technische-termen": {
+                    "title": "Technische termen",
+                    "number": "3",
+                    "reason": "Deze termen hebben specifieke technische betekenissen in assurance-contexten die verwarring kunnen veroorzaken.",
+                    "recommendation": "Gebruik specifiekere termen zoals 'pentest', 'security assessment', 'vulnerability scan', etc."
+                },
+                "absolute-bewoording": {
+                    "title": "Absolute bewoording",
+                    "number": "4",
+                    "reason": "Absolute bewoordingen suggereren een volledigheid die zelden haalbaar is in pentesting.",
+                    "recommendation": "Gebruik nuancerende termen zoals 'tijdens onze tests', 'in de geteste componenten', etc."
+                }
+            }
+        })
+    
+    # Regular file upload handling
     if 'file' not in request.files:
         logger.warning("No file part in the request")
-        # Return mock data for demonstration
-        logger.info("Returning mock data due to missing file")
-        return jsonify(generate_mock_data())
+        logger.info("Returning error message due to missing file")
+        return jsonify({
+            "error": "Geen bestand ontvangen",
+            "message": "Er is geen bestand ontvangen voor analyse. Upload een .docx of .pdf bestand om te controleren op verboden woorden."
+        }), 400
     
     file = request.files['file']
     
     if file.filename == '':
         logger.warning("No file selected")
-        # Return mock data for demonstration
-        logger.info("Returning mock data due to empty filename")
-        return jsonify(generate_mock_data())
+        # Return error message
+        logger.info("Returning error message due to empty filename")
+        return jsonify({
+            "error": "Geen bestand geselecteerd",
+            "message": "Er is geen bestand geselecteerd. Upload een .docx of .pdf bestand om te controleren op verboden woorden."
+        }), 400
     
     if file and allowed_file(file.filename):
         try:
@@ -286,7 +317,7 @@ def check_document():
             
             logger.info(f"Extracted {len(text_content)} text segments from document")
             
-            # If no text was extracted, return mock data
+            # If no text was extracted, return error message
             if not text_content:
                 logger.warning("No text content extracted from document")
                 # Clean up the file
@@ -295,8 +326,11 @@ def check_document():
                 except Exception as e:
                     logger.error(f"Error removing file: {str(e)}")
                 
-                # Return mock data for demonstration
-                return jsonify(generate_mock_data())
+                # Return error message
+                return jsonify({
+                    "error": "Geen tekst geëxtraheerd",
+                    "message": "Er kon geen tekst worden geëxtraheerd uit het document. Controleer of het bestand niet beschadigd of beveiligd is."
+                }), 400
             
             # Scan for forbidden words
             found_words = scan_for_forbidden_words(text_content)
@@ -328,14 +362,20 @@ def check_document():
             except Exception as cleanup_error:
                 logger.error(f"Error removing file after error: {str(cleanup_error)}")
             
-            # Return mock data in case of error
-            logger.info("Returning mock data due to processing error")
-            return jsonify(generate_mock_data())
+            # Return error message in case of error
+            logger.info("Returning error message due to processing error")
+            return jsonify({
+                "error": "Verwerkingsfout",
+                "message": "Er is een fout opgetreden bij het verwerken van het document. Probeer het opnieuw met een ander bestand."
+            }), 500
     else:
         logger.warning(f"Invalid file type: {file.filename}")
-        # Return mock data for demonstration
-        logger.info("Returning mock data due to invalid file type")
-        return jsonify(generate_mock_data())
+        # Return error message
+        logger.info("Returning error message due to invalid file type")
+        return jsonify({
+            "error": "Ongeldig bestandstype",
+            "message": "Alleen .docx en .pdf bestanden worden ondersteund. Upload een geldig bestand om te controleren op verboden woorden."
+        }), 400
 
 # Add CORS headers to all responses
 @app.after_request
