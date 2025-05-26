@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Forbidden Words Checker API",
-    "description": "API voor het controleren van documenten op verboden woorden in penetration testing rapporten",
+    "description": "API for checking documents for forbidden words in penetration testing reports",
     "version": "1.0.0"
   },
   "servers": [
@@ -13,9 +13,9 @@
   "paths": {
     "/check": {
       "post": {
-        "summary": "Controleer document op verboden woorden",
+        "summary": "Check document for forbidden words",
         "operationId": "checkDocument",
-        "description": "Upload een document (.docx of .pdf) en ontvang een lijst met gevonden verboden woorden",
+        "description": "Upload a document (.docx or .pdf) and receive a list of forbidden words found in the document",
         "requestBody": {
           "required": true,
           "content": {
@@ -26,7 +26,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Document bestand (.docx of .pdf)"
+                    "description": "Document file (.docx or .pdf)"
                   }
                 },
                 "required": ["file"]
@@ -36,7 +36,7 @@
         },
         "responses": {
           "200": {
-            "description": "Resultaten van de controle",
+            "description": "Results of the document check",
             "content": {
               "application/json": {
                 "schema": {
@@ -48,46 +48,48 @@
                         "properties": {
                           "word": {
                             "type": "string",
-                            "description": "Het gevonden verboden woord"
+                            "description": "The forbidden word found in the document"
                           },
                           "page": {
                             "type": "integer",
-                            "description": "Paginanummer waar het woord is gevonden"
+                            "description": "Page number where the word was found"
                           },
                           "context": {
                             "type": "string",
-                            "description": "De zin of paragraaf waarin het woord is gevonden"
+                            "description": "The sentence or paragraph containing the forbidden word"
                           },
                           "title": {
                             "type": "string",
-                            "description": "Titel en nummer van de categorie"
+                            "description": "Title and number of the category"
                           },
                           "reason": {
                             "type": "string",
-                            "description": "Waarom het woord verboden is"
+                            "description": "Why the word is forbidden"
                           },
                           "recommendation": {
                             "type": "string",
-                            "description": "Aanbeveling voor vervanging of herformulering"
+                            "description": "Recommendation for replacement or rephrasing"
                           }
                         },
                         "required": ["word", "page", "context", "title", "reason", "recommendation"]
-                      }
+                      },
+                      "description": "List of forbidden words found in the document"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "message": {
                           "type": "string",
-                          "description": "Bericht dat er geen verboden woorden zijn gevonden"
+                          "description": "Message indicating no forbidden words were found"
                         },
                         "results": {
                           "type": "array",
                           "items": {},
-                          "description": "Lege array bij geen resultaten"
+                          "description": "Empty array when no results are found"
                         }
                       },
-                      "required": ["message", "results"]
+                      "required": ["message", "results"],
+                      "description": "Response when no forbidden words are found"
                     }
                   ]
                 }
@@ -95,7 +97,7 @@
             }
           },
           "400": {
-            "description": "Ongeldige aanvraag",
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -103,20 +105,43 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "description": "Foutmelding"
+                      "description": "Error message"
                     },
-                    "details": {
+                    "message": {
                       "type": "string",
-                      "description": "Gedetailleerde foutinformatie"
+                      "description": "Detailed error information"
                     }
                   },
-                  "required": ["error"]
+                  "required": ["error", "message"],
+                  "description": "Error response for invalid requests"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Information about supported file types"
+                    }
+                  },
+                  "required": ["error", "message"],
+                  "description": "Error response for unsupported file types"
                 }
               }
             }
           },
           "500": {
-            "description": "Server fout",
+            "description": "Server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -124,14 +149,15 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "description": "Foutmelding"
+                      "description": "Error message"
                     },
-                    "details": {
+                    "message": {
                       "type": "string",
-                      "description": "Gedetailleerde foutinformatie"
+                      "description": "Detailed error information"
                     }
                   },
-                  "required": ["error"]
+                  "required": ["error", "message"],
+                  "description": "Error response for server-side errors"
                 }
               }
             }
@@ -141,12 +167,12 @@
     },
     "/health": {
       "get": {
-        "summary": "Controleer de status van de API",
+        "summary": "Check API status",
         "operationId": "healthCheck",
-        "description": "Eenvoudige health check endpoint om te controleren of de API beschikbaar is",
+        "description": "Simple health check endpoint to verify if the API is available",
         "responses": {
           "200": {
-            "description": "API is beschikbaar",
+            "description": "API is available",
             "content": {
               "application/json": {
                 "schema": {
@@ -154,7 +180,8 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "description": "Status van de API"
+                      "description": "Status of the API",
+                      "example": "OK"
                     }
                   },
                   "required": ["status"]
