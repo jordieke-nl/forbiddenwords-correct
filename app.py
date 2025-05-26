@@ -234,9 +234,10 @@ def check_document():
     if 'ChatGPT' in user_agent:
         logger.info("Request from ChatGPT detected, returning instructions")
         return jsonify({
-            "instruction": "TECHNICAL LIMITATION",
+            "instruction": "TECHNICAL LIMITATION / TECHNISCHE BEPERKING",
             "message": "ChatGPT currently cannot correctly forward files to external APIs. Use ChatGPT's built-in functionality to analyze the document for forbidden words. The forbidden words list is already included in the instructions of this Custom GPT.",
-            "language": "english",
+            "message_nl": "ChatGPT kan momenteel geen bestanden correct doorsturen naar externe API's. Gebruik de ingebouwde functionaliteit van ChatGPT om het document te analyseren op verboden woorden. De verboden woorden lijst is al opgenomen in de instructies van deze Custom GPT.",
+            "language_instruction": "Respond in the same language as the user's query. Als de gebruiker in het Nederlands vraagt, antwoord dan in het Nederlands. If the user asks in English, respond in English.",
             "forbidden_words": {
                 "nl": [
                     "garanderen", "verzekeren", "waarborgen", "verklaren", "bevestigen", "certificeren", "valideren",
