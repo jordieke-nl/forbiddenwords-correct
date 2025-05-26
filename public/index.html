@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forbidden Words Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Forbidden Words Checker</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="document">Upload een document (.docx of .pdf):</label>
+            <input type="file" id="document" accept=".docx,.pdf">
+        </div>
+        <button id="checkButton">Controleer op verboden woorden</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Document wordt gecontroleerd...</p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('checkButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('document');
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!fileInput.files.length) {
+                resultDiv.innerHTML = '<p style="color: red;">Selecteer eerst een document.</p>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const allowedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'];
+            
+            if (!allowedTypes.includes(file.type)) {
+                resultDiv.innerHTML = '<p style="color: red;">Alleen .docx en .pdf bestanden zijn toegestaan.</p>';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            resultDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Fout: ${data.error}</p>`;
+                    if (data.details) {
+                        resultDiv.innerHTML += `<p>${data.details}</p>`;
+                    }
+                } else if (data.message) {
+                    resultDiv.innerHTML = `<p style="color: green;">${data.message}</p>`;
+                } else if (data.markdownTable) {
+                    resultDiv.innerHTML = `<h3>Resultaten:</h3><div>${data.markdownTable}</div>`;
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.innerHTML = `<p style="color: red;">Er is een fout opgetreden: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
