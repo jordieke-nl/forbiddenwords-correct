@@ -12,9 +12,18 @@ const pdfParse = require('pdf-parse');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure CORS
-app.use(cors());
+// Configure CORS with more permissive settings
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -246,7 +255,13 @@ app.post('/check', upload.single('file'), async (req, res) => {
   let filePath = null;
   
   try {
+    console.log('Received request to /check endpoint');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    
     if (!req.file) {
+      console.error('No file uploaded or invalid file type');
       return res.status(400).json({ error: 'No file uploaded or invalid file type' });
     }
 
@@ -255,12 +270,22 @@ app.post('/check', upload.single('file'), async (req, res) => {
     
     // Verify file exists and is readable
     if (!fs.existsSync(filePath)) {
+      console.error(`File not found at path: ${filePath}`);
       return res.status(400).json({ error: 'File upload failed - file not found' });
     }
     
     // Extract text from the document
     const textContent = await extractTextFromDocument(filePath);
     console.log(`Successfully extracted text from document, found ${textContent.length} text segments`);
+    
+    // If no text was extracted, return a specific error
+    if (textContent.length === 0) {
+      console.warn('No text content could be extracted from the document');
+      return res.status(400).json({ 
+        error: 'Document processing failed', 
+        details: 'No text content could be extracted from the document. Please ensure the file is not corrupted or password protected.'
+      });
+    }
     
     // Scan for forbidden words
     const foundWords = scanForForbiddenWords(textContent);
@@ -276,7 +301,14 @@ app.post('/check', upload.single('file'), async (req, res) => {
     }
     
     // Return the results
-    res.json(foundWords);
+    if (foundWords.length === 0) {
+      return res.json({
+        message: "Er zijn geen verboden woorden aangetroffen in het document.",
+        results: []
+      });
+    } else {
+      return res.json(foundWords);
+    }
     
   } catch (error) {
     console.error('Error processing file:', error);
