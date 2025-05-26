@@ -233,28 +233,28 @@ def check_document():
     user_agent = request.headers.get('User-Agent', '')
     if 'ChatGPT' in user_agent:
         logger.info("Request from ChatGPT detected, returning instructions")
-        # Determine if the request headers contain information about the user's language
-        accept_language = request.headers.get('Accept-Language', '').lower()
-        referer = request.headers.get('Referer', '').lower()
+        # Get the content type of the request
+        content_type = request.headers.get('Content-Type', '')
+        logger.info(f"Content-Type: {content_type}")
         
-        # Default to English
-        language = "english"
+        # Check if this is a direct API call from a user (not ChatGPT)
+        is_direct_api_call = 'multipart/form-data' in content_type and 'ChatGPT' not in user_agent
         
-        # Check for Dutch indicators
-        dutch_indicators = ['nl', 'nl-', 'dutch', 'nederlands']
-        for indicator in dutch_indicators:
-            if (indicator in accept_language) or (indicator in referer):
-                language = "dutch"
-                break
-        
-        logger.info(f"Detected language: {language}")
-        
-        return jsonify({
-            "instruction": "IMPORTANT INSTRUCTION FOR CHATGPT",
-            "message": "ChatGPT currently cannot correctly forward files to external APIs. Use ChatGPT's built-in functionality to analyze the document for forbidden words. The forbidden words list is already included in the instructions of this Custom GPT.",
-            "message_nl": "ChatGPT kan momenteel geen bestanden correct doorsturen naar externe API's. Gebruik de ingebouwde functionaliteit van ChatGPT om het document te analyseren op verboden woorden. De verboden woorden lijst is al opgenomen in de instructies van deze Custom GPT.",
-            "language_setting": language,
-            "language_instruction": "YOU MUST FOLLOW THIS RULE: If the user asks a question in English, you MUST respond in English. If the user asks a question in Dutch, you MUST respond in Dutch. ALWAYS match the language of your response to the language of the user's query.",
+        # If it's a direct API call and there's a file, process it normally
+        if is_direct_api_call and 'file' in request.files:
+            logger.info("Direct API call with file detected, processing normally")
+            # Continue with normal processing (this will be handled by the code below)
+            pass
+        else:
+            # This is either a ChatGPT call or a direct API call without a file
+            # Return the instructions and forbidden words list
+            logger.info("Returning instructions and forbidden words list")
+            return jsonify({
+                "instruction": "ANALYZE DOCUMENT FOR FORBIDDEN WORDS",
+                "message": "Please analyze the uploaded document for forbidden words using the list below. Return the results in a table format with the word, context, page number, category, reason, and recommendation.",
+                "message_nl": "Analyseer het geüploade document op verboden woorden met behulp van onderstaande lijst. Geef de resultaten weer in een tabelformaat met het woord, context, paginanummer, categorie, reden en aanbeveling.",
+                "language_instruction": "IMPORTANT: If the user asks a question in English, respond in English. If the user asks a question in Dutch, respond in Dutch. Always match the language of your response to the language of the user's query.",
+                "api_url": "https://forbiddenwords-correct.onrender.com/check",
             "forbidden_words": {
                 "nl": [
                     "garanderen", "verzekeren", "waarborgen", "verklaren", "bevestigen", "certificeren", "valideren",
