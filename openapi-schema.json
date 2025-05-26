@@ -1,0 +1,169 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Forbidden Words Checker API",
+    "description": "API voor het controleren van documenten op verboden woorden in penetration testing rapporten",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://forbiddenwords-correct.onrender.com"
+    }
+  ],
+  "paths": {
+    "/check": {
+      "post": {
+        "summary": "Controleer document op verboden woorden",
+        "operationId": "checkDocument",
+        "description": "Upload een document (.docx of .pdf) en ontvang een lijst met gevonden verboden woorden",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Document bestand (.docx of .pdf)"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultaten van de controle",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "word": {
+                            "type": "string",
+                            "description": "Het gevonden verboden woord"
+                          },
+                          "page": {
+                            "type": "integer",
+                            "description": "Paginanummer waar het woord is gevonden"
+                          },
+                          "context": {
+                            "type": "string",
+                            "description": "De zin of paragraaf waarin het woord is gevonden"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Titel en nummer van de categorie"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "description": "Waarom het woord verboden is"
+                          },
+                          "recommendation": {
+                            "type": "string",
+                            "description": "Aanbeveling voor vervanging of herformulering"
+                          }
+                        },
+                        "required": ["word", "page", "context", "title", "reason", "recommendation"]
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "description": "Bericht dat er geen verboden woorden zijn gevonden"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {},
+                          "description": "Lege array bij geen resultaten"
+                        }
+                      },
+                      "required": ["message", "results"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ongeldige aanvraag",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Foutmelding"
+                    },
+                    "details": {
+                      "type": "string",
+                      "description": "Gedetailleerde foutinformatie"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server fout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Foutmelding"
+                    },
+                    "details": {
+                      "type": "string",
+                      "description": "Gedetailleerde foutinformatie"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Controleer de status van de API",
+        "operationId": "healthCheck",
+        "description": "Eenvoudige health check endpoint om te controleren of de API beschikbaar is",
+        "responses": {
+          "200": {
+            "description": "API is beschikbaar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Status van de API"
+                    }
+                  },
+                  "required": ["status"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
